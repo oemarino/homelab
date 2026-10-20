@@ -1,0 +1,14 @@
+# /etc/cloudflared/config.yml - example with placeholders.
+# The tunnel makes an OUTBOUND connection to Cloudflare, so the home router
+# needs no port forwards and the server needs no inbound firewall rule.
+# Create your own with: cloudflared tunnel create <name>
+# The credentials JSON is a secret: keep it root-only and never commit it.
+tunnel: <TUNNEL-UUID>
+credentials-file: /etc/cloudflared/<TUNNEL-UUID>.json
+no-autoupdate: true
+ingress:
+  - hostname: example.com            # e.g. osvaldomarino.dev
+    service: http://127.0.0.1:8088   # website container, bound to localhost only
+  - hostname: www.example.com
+    service: http://127.0.0.1:8088
+  - service: http_status:404         # anything else: 404

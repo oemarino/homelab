@@ -1,0 +1,27 @@
+# Secrets - never commit
+.env
+*.env
+!*.env.example
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+cert.pem
+**/cloudflared/*.json
+authd.pass
+# Runtime data
+logs/
+*.log
+# Scan exports (may contain IPs/hostnames)
+*.pdf
+*.csv
+*.xml
+!wazuh/*.xml
+# Backups and editor junk
+*.bak
+*.bak-*
+*.orig
+*.swp
+.DS_Store

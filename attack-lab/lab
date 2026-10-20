@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Practice lab control: lab up | down | status | logs
+set -euo pipefail
+cd /opt/attack-lab
+case "${1:-status}" in
+  up)     sudo docker compose up -d
+          echo "DVWA:       http://127.0.0.1:8090  (log in with DVWA's default credentials, then click Create / Reset Database once)"
+          echo "Juice Shop: http://127.0.0.1:8091"
+          echo "Also reachable over Tailscale on the same ports. Run 'lab down' when finished." ;;
+  down)   sudo docker compose down ;;
+  status) sudo docker compose ps ;;
+  logs)   tail -f /opt/attack-lab/logs/nginx/access.log ;;
+  *) echo "usage: lab up|down|status|logs"; exit 1 ;;
+esac

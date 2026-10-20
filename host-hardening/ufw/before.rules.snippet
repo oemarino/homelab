@@ -1,0 +1,16 @@
+# Excerpt of /etc/ufw/before.rules (inserted after the stock "drop INVALID packets"
+# block in the *filter section). before.rules is evaluated BEFORE any user rule
+# from `ufw allow ...`, so a broad allow added later cannot reopen these ports.
+# Loopback traffic is already accepted earlier by the stock "-i lo -j ACCEPT" rule.
+
+# Drop ICMP timestamp requests (type 13): leaks the host clock / uptime. Ping (echo) still works.
+-A ufw-before-input -p icmp --icmp-type timestamp-request -j DROP
+
+# AMP game-panel embedded SFTP servers (2223, 2224) only over Tailscale.
+# Their SSH stack offers SHA-1 key exchange and CBC ciphers with no setting to disable them.
+-A ufw-before-input -i tailscale0 -p tcp -m multiport --dports 2223,2224 -j ACCEPT
+-A ufw-before-input -p tcp -m multiport --dports 2223,2224 -j DROP
+
+# AMP panel plain HTTP (8080) only via loopback (the HTTPS proxy on 8443) or Tailscale (WireGuard-encrypted).
+-A ufw-before-input -i tailscale0 -p tcp --dport 8080 -j ACCEPT
+-A ufw-before-input -p tcp --dport 8080 -j DROP

@@ -1,0 +1,67 @@
+# Isolated attack/defense practice lab. Vulnerable apps live on an
+# internal-only network (no internet egress). Only the nginx proxy is
+# reachable, and only on 127.0.0.1 and the server's Tailscale IP.
+# Secrets and the Tailscale IP come from .env (see .env.example).
+name: attack-lab
+
+services:
+  dvwa-db:
+    image: mariadb:11
+    restart: "no"
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DVWA_DB_ROOT_PASSWORD}
+      MARIADB_DATABASE: dvwa
+      MARIADB_USER: dvwa
+      MARIADB_PASSWORD: ${DVWA_DB_PASSWORD}
+    volumes:
+      - dvwa-db:/var/lib/mysql
+    networks: [lab-internal]
+    mem_limit: 384m
+    cpus: 0.5
+    pids_limit: 200
+
+  dvwa:
+    image: ghcr.io/digininja/dvwa:latest
+    restart: "no"
+    depends_on: [dvwa-db]
+    environment:
+      DB_SERVER: dvwa-db
+      DB_PASSWORD: ${DVWA_DB_PASSWORD}   # must match MARIADB_PASSWORD
+      DEFAULT_SECURITY_LEVEL: low
+    networks: [lab-internal]
+    mem_limit: 256m
+    cpus: 0.5
+    pids_limit: 200
+
+  juice-shop:
+    image: bkimminich/juice-shop:latest
+    restart: "no"
+    networks: [lab-internal]
+    mem_limit: 512m
+    cpus: 0.5
+    pids_limit: 200
+
+  proxy:
+    image: nginx:alpine
+    restart: "no"
+    depends_on: [dvwa, juice-shop]
+    ports:
+      - "127.0.0.1:8090:8090"
+      - "${TAILSCALE_IP}:8090:8090"
+      - "127.0.0.1:8091:8091"
+      - "${TAILSCALE_IP}:8091:8091"
+    volumes:
+      - ./nginx/lab.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./logs/nginx:/var/log/nginx
+    networks: [lab-internal, lab-edge]
+    mem_limit: 64m
+    cpus: 0.25
+    pids_limit: 100
+
+networks:
+  lab-internal:
+    internal: true
+  lab-edge: {}
+
+volumes:
+  dvwa-db:

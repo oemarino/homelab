@@ -1,0 +1,116 @@
+<!--
+  Wazuh agent (homelab server) - excerpt of /var/ossec/etc/ossec.conf.
+  Only the parts changed or relied on for the SOC lab are shown; the rest is the
+  stock Ubuntu 24.04 agent config. The agent talks to the manager container on
+  127.0.0.1:1514 (enrollment uses an authd password file, not included).
+-->
+<ossec_config>
+  <!-- CIS Ubuntu 24.04 benchmark (Security Configuration Assessment) -->
+  <sca>
+    <enabled>yes</enabled>
+    <scan_on_start>yes</scan_on_start>
+    <interval>12h</interval>
+    <skip_nfs>yes</skip_nfs>
+  </sca>
+
+  <!-- File integrity monitoring -->
+  <syscheck>
+    <disabled>no</disabled>
+
+    <!-- Frequency that syscheck is executed default every 12 hours -->
+    <frequency>43200</frequency>
+
+    <scan_on_start>yes</scan_on_start>
+
+    <!-- Directories to check  (perform all possible verifications) -->
+    <directories realtime="yes">/etc</directories>   <!-- real-time FIM on /etc -->
+    <directories>/usr/bin,/usr/sbin</directories>
+    <directories>/bin,/sbin,/boot</directories>
+
+    <!-- Files/directories to ignore -->
+    <ignore>/etc/mtab</ignore>
+    <ignore>/etc/hosts.deny</ignore>
+    <ignore>/etc/mail/statistics</ignore>
+    <ignore>/etc/random-seed</ignore>
+    <ignore>/etc/random.seed</ignore>
+    <ignore>/etc/adjtime</ignore>
+    <ignore>/etc/httpd/logs</ignore>
+    <ignore>/etc/utmpx</ignore>
+    <ignore>/etc/wtmpx</ignore>
+    <ignore>/etc/cups/certs</ignore>
+    <ignore>/etc/dumpdates</ignore>
+    <ignore>/etc/svc/volatile</ignore>
+
+    <!-- File types to ignore -->
+    <ignore type="sregex">.log$|.swp$</ignore>
+
+    <!-- Check the file, but never compute the diff -->
+    <nodiff type="sregex">^/etc/ssl/private/|^/etc/pki/tls/private/</nodiff>
+    <nodiff>/etc/shadow</nodiff>
+    <nodiff>/etc/shadow-</nodiff>
+    <nodiff>/etc/gshadow</nodiff>
+    <nodiff>/etc/gshadow-</nodiff>
+
+    <skip_nfs>yes</skip_nfs>
+    <skip_dev>yes</skip_dev>
+    <skip_proc>yes</skip_proc>
+    <skip_sys>yes</skip_sys>
+
+    <!-- Nice value for Syscheck process -->
+    <process_priority>10</process_priority>
+
+    <!-- Maximum output throughput -->
+    <max_eps>50</max_eps>
+
+    <!-- Database synchronization settings -->
+    <synchronization>
+      <enabled>yes</enabled>
+      <interval>5m</interval>
+      <max_eps>10</max_eps>
+    </synchronization>
+  </syscheck>
+</ossec_config>
+
+<ossec_config>
+  <!-- Homelab SIEM lab: file-based system logs (replaces generic journald to avoid duplicates) -->
+  <localfile>
+    <log_format>syslog</log_format>
+    <location>/var/log/auth.log</location>
+  </localfile>
+
+  <localfile>
+    <log_format>syslog</log_format>
+    <location>/var/log/ufw.log</location>
+  </localfile>
+
+  <localfile>
+    <log_format>syslog</log_format>
+    <location>/var/log/syslog</location>
+    <ignore type="PCRE2">\[UFW </ignore>
+  </localfile>
+
+  <!-- Attack lab: reverse-proxy access log (DVWA / Juice Shop) -->
+  <localfile>
+    <log_format>apache</log_format>
+    <location>/opt/attack-lab/logs/nginx/access.log</location>
+  </localfile>
+
+  <!-- Docker engine events (container start/stop/exec etc.) -->
+  <wodle name="docker-listener">
+    <disabled>no</disabled>
+    <interval>10m</interval>
+    <attempts>5</attempts>
+    <run_on_start>yes</run_on_start>
+  </wodle>
+
+  <localfile>
+    <log_format>syslog</log_format>
+    <location>/var/ossec/logs/active-responses.log</location>
+  </localfile>
+
+  <localfile>
+    <log_format>syslog</log_format>
+    <location>/var/log/dpkg.log</location>
+  </localfile>
+
+</ossec_config>
