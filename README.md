@@ -17,6 +17,7 @@ with a SIEM, attack on purpose, and use to host my portfolio site with **zero op
 | Outside-in exposure check | **0 of 1,007** IPv4 TCP ports open; IPv6 tested ports all blocked. [Write-up](docs/external-exposure-check.md) |
 | Wazuh SIEM detections | SSH brute force (rules 5710 → 5712), real-time file integrity on `/etc` (554/550/553), UNION-based SQL injection (31106). [Write-up](docs/wazuh-soc-lab.md) |
 | Detection gap closed | Stock rules **missed** the boolean `OR '1'='1'` SQLi. I wrote custom rule **100100/100101** (level 10/12, MITRE T1190): **3 of 3** boolean injections now alert, UNION alert unchanged, **0** matches on 29,970 real website requests. [Write-up](docs/wazuh-custom-rule-boolean-sqli.md) |
+| Simulated attack incident report | Controlled recon + SQLi/XSS/LFI chain against the lab. Detected: Nmap recon (31151, T1595.002), **3 of 3** boolean SQLi (custom **100101**, level 12), UNION SQLi/XSS/LFI (31106), GET SQLi (31103). **Missed:** SQLi in a POST body (not in access logs). [Report](docs/incident-report-simulated-attack.md) |
 | CIS Ubuntu 24.04 benchmark (Wazuh SCA) | **50%** on the first scan, a baseline to improve on |
 | Website | Static site in a non-root, read-only nginx container behind Cloudflare Tunnel, strict CSP, no inbound firewall rule |
 
@@ -62,7 +63,7 @@ proxy is reachable, and only from the server itself or over Tailscale.
 | [`amp-https/`](amp-https/) | TLS reverse proxy for the game panel | Moves a cleartext HTTP login to HTTPS (TLS 1.2/1.3, ECDHE + AEAD only, HSTS, WebSockets). Same hardened container profile as the website. |
 | [`wazuh/`](wazuh/) | Single-node Wazuh SIEM, agent config and [custom rules](wazuh/rules/) | Ports bound to specific interfaces (Docker bypasses ufw); indexer and API localhost-only; demo passwords replaced **before first boot**; real-time FIM on `/etc`; CIS benchmark via SCA; Docker listener. Custom rule 100100/100101 for boolean-based SQLi. |
 | [`attack-lab/`](attack-lab/) | DVWA + OWASP Juice Shop practice lab | `internal` network (egress test failed as intended), resource limits, `restart: "no"`, `lab up/down/status/logs` helper. Proxy access log feeds Wazuh. |
-| [`docs/`](docs/) | Write-ups | Greenbone before/after, Wazuh SOC lab, custom boolean-SQLi rule, external exposure check. |
+| [`docs/`](docs/) | Write-ups | Greenbone before/after, Wazuh SOC lab, custom boolean-SQLi rule, simulated-attack incident report, external exposure check. |
 
 ## Security decisions worth calling out
 
@@ -79,7 +80,7 @@ proxy is reachable, and only from the server itself or over Tailscale.
 homelab/
 ├── README.md, SECURITY.md, LICENSE, .gitignore
 ├── docs/          hardening-greenbone.md, wazuh-soc-lab.md, wazuh-custom-rule-boolean-sqli.md,
-│                  external-exposure-check.md
+│                  incident-report-simulated-attack.md, external-exposure-check.md
 ├── website/       compose.yaml, nginx/default.conf, cloudflared/config.example.yml
 ├── host-hardening/ssh/40-crypto-hardening.conf
 │                  sysctl/99-homelab-tcp-timestamps.conf
@@ -98,6 +99,7 @@ Linux · ufw · Tailscale · Greenbone/OpenVAS · Nmap · Docker · Wazuh · ngi
 - Greenbone override for the documented false positive
 - WAF (ModSecurity + OWASP CRS) in front of the lab to catch POST-body injections that access logs can't see
 - Raise the CIS benchmark score above 50%
+- Suricata network IDS feeding Wazuh, so port scans with no HTTP component are visible
 
 ---
 Built by **Osvaldo Marino**, a cybersecurity student at Georgia State University, currently studying for CompTIA Security+.
