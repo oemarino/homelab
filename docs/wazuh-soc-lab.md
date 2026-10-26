@@ -64,12 +64,14 @@ I ran these from the server through the lab proxy:
 
 **Lesson:** Wazuh's signature rules for web logs caught the UNION-based injection but missed the boolean `OR '1'='1'` variant, so signature detection alone has gaps. Possible next steps: write a custom rule, or add a WAF such as ModSecurity with the OWASP Core Rule Set (CRS) in front of the lab.
 
+**Update (Oct 26, 2026):** gap closed with custom rule 100100/100101. The same `OR '1'='1'` payload now raises a level-12 alert. See [Closing a detection gap](wazuh-custom-rule-boolean-sqli.md).
+
 ### 4. File integrity monitoring
 I created, modified and deleted a test file in `/etc`. Real-time FIM raised **554** (file added, level 5), **550** (checksum changed, level 7) and **553** (file deleted, level 7) within seconds.
 
 ## How to use it
 - **Dashboard:** `https://<server LAN IP>:5443` from home, or `https://<server Tailscale IP>:5443` from anywhere on the tailnet. The certificate is self-signed, so accept the browser warning. Credentials live in a root-only file on the server.
-- **Useful searches (Threat Hunting → Events):** `rule.id:(5710 or 5712)`, `rule.id:31106`, `rule.groups:syscheck`, `rule.groups:docker`.
+- **Useful searches (Threat Hunting → Events):** `rule.id:(5710 or 5712)`, `rule.id:31106`, `rule.id:(100100 or 100101)`, `rule.groups:syscheck`, `rule.groups:docker`.
 - **Lab:** `lab up` / `lab down` / `lab status` / `lab logs`
   - DVWA: `http://127.0.0.1:8090` (or the Tailscale IP). Log in with DVWA's well-known default credentials; security level defaults to *low*.
   - Juice Shop: `http://127.0.0.1:8091`

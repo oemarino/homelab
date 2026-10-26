@@ -1,0 +1,41 @@
+<!--
+  Custom rules: boolean-based (blind) SQL injection in web access logs
+  Author: Osvaldo Marino (homelab Home SOC Lab)
+
+  Why: the stock web rules (0245-web_rules.xml, 31103/31104) look for
+  keywords such as "select", "union", "where" and missed payloads like
+  id=1' OR '1'='1 (logged as id=1%27+OR+%271%27%3D%271), which dumped every
+  user row from DVWA without raising a single alert.
+
+  These rules look for the boolean pattern instead of keywords:
+    <quote | digit | ")"> <space> OR|AND|"||" <space> <operand> <compare op>
+  where space can be "+", %20, %09, %0A, %0D or an inline comment /**/,
+  quotes can be raw or URL-encoded (%27, %22), and the comparison can be
+  =, %3D, <>, !=, <, >, or LIKE. Matching is case-insensitive.
+  "<" and ">" are written as \x3c / \x3e so the XML stays valid.
+-->
+<group name="web,accesslog,attack,sql_injection,local,">
+
+  <!-- Boolean-based SQLi attempt (any status code). -->
+  <rule id="100100" level="10">
+    <if_sid>31100, 31108</if_sid>
+    <url type="pcre2">(?i)(?:'|%27|"|%22|\)|%29|\d)(?:\+|%20|%09|%0a|%0d|/\*.*?\*/|%2f%2a.*?%2a%2f|\s)+(?:or|and|xor|\|\||%7c%7c|%26%26)(?:\+|%20|%09|%0a|%0d|/\*.*?\*/|%2f%2a.*?%2a%2f|\s|\(|%28)+(?:'|%27|"|%22)?[\w.@-]*(?:'|%27|"|%22)?(?:\+|%20|%09|\s)*(?:=|%3d|\x3c\x3e|%3c%3e|!=|%21%3d|\x3e|%3e|\x3c|%3c|(?:\+|%20)like(?:\+|%20))</url>
+    <description>Boolean-based SQL injection attempt (e.g. ' OR '1'='1) from $(srcip).</description>
+    <mitre>
+      <id>T1190</id>
+    </mitre>
+    <group>pci_dss_6.5,pci_dss_11.4,pci_dss_6.5.1,gdpr_IV_35.7.d,nist_800_53_SA.11,nist_800_53_SI.4,tsc_CC6.6,tsc_CC7.1,tsc_CC8.1,tsc_CC6.1,tsc_CC6.8,tsc_CC7.2,tsc_CC7.3,</group>
+  </rule>
+
+  <!-- Same attempt, but the server answered 200: the injection probably worked. -->
+  <rule id="100101" level="12">
+    <if_sid>100100</if_sid>
+    <id>^200</id>
+    <description>Boolean-based SQL injection returned code 200 (likely successful) from $(srcip).</description>
+    <mitre>
+      <id>T1190</id>
+    </mitre>
+    <group>pci_dss_6.5,pci_dss_11.4,pci_dss_6.5.1,gdpr_IV_35.7.d,nist_800_53_SA.11,nist_800_53_SI.4,tsc_CC6.6,tsc_CC7.1,tsc_CC8.1,tsc_CC6.1,tsc_CC6.8,tsc_CC7.2,tsc_CC7.3,</group>
+  </rule>
+
+</group>

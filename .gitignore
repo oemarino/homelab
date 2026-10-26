@@ -19,6 +19,7 @@ logs/
 *.csv
 *.xml
 !wazuh/*.xml
+!wazuh/rules/*.xml
 # Backups and editor junk
 *.bak
 *.bak-*
