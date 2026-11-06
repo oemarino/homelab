@@ -74,11 +74,24 @@ proxy is reachable, and only from the server itself or over Tailscale.
 4. **Detection has gaps, so close them and prove it.** Wazuh caught the UNION SQLi but not `OR '1'='1'`. I wrote a custom rule that matches the boolean pattern instead of keywords, validated it with `wazuh-logtest`, re-ran the attack, and checked it against real traffic for false positives.
 5. **Change safely.** Back up every file, change one control at a time, keep an SSH lifeline open, and rescan to verify.
 
+## How this repo is organized
+
+[constitution.md](constitution.md) states the rules these write-ups already follow. Each project has a spec, a plan, and a task list. They were written after the build: they organize what is already here and record the next steps at the bottom of this file.
+
+- [Hardening and exposure](specs/01-hardening-exposure/)
+- [Wazuh SOC and custom detection](specs/02-wazuh-detection/)
+- [Attack lab and incident report](specs/03-attack-lab-incident/)
+
+`website/` and `amp-https/` are shared infrastructure and have no spec of their own.
+
 ## Repository layout
 
 ```
 homelab/
 ├── README.md, SECURITY.md, LICENSE, .gitignore
+├── constitution.md
+├── specs/         01-hardening-exposure/, 02-wazuh-detection/, 03-attack-lab-incident/
+│                  spec.md, plan.md, tasks.md in each
 ├── docs/          hardening-greenbone.md, wazuh-soc-lab.md, wazuh-custom-rule-boolean-sqli.md,
 │                  incident-report-simulated-attack.md, external-exposure-check.md
 ├── website/       compose.yaml, nginx/default.conf, cloudflared/config.example.yml
